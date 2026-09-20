@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Marks Management - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-award"></i> Marks Management</h1>
+        <p class="page-subtitle">Record and calculate internal and semester marks for first-year students</p>
+    </div>
+</div>
+
+<!-- Step 1: Branch → Semester → Subject Selection Filter -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-filter"></i> Select Class &amp; Subject</h3>
+    </div>
+    <form method="GET" action="{{ url_for('marks_view') }}" class="form-row" style="align-items: flex-end;">
+        <div class="form-group" style="min-width: 160px;">
+            <label class="form-label" for="filter_branch">1. Select Branch *</label>
+            <select id="filter_branch" name="branch" class="form-select" required>
+                {% for b in branches %}
+                    <option value="{{ b.code }}" {% if selected_branch == b.code %}selected{% endif %}>{{ b.code }} — {{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 140px;">
+            <label class="form-label" for="filter_sem">2. Semester *</label>
+            <select id="filter_sem" name="sem" class="form-select" required onchange="this.form.submit()">
+                <option value="1" {% if selected_sem == 1 %}selected{% endif %}>Semester 1</option>
+                <option value="2" {% if selected_sem == 2 %}selected{% endif %}>Semester 2</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 280px; flex: 2;">
+            <label class="form-label" for="filter_subject">3. First-Year Subject *</label>
+            <select id="filter_subject" name="subject_id" class="form-select" required>
+                {% for sub in subjects %}
+                    <option value="{{ sub.id }}" {% if selected_subject_id == sub.id %}selected{% endif %}>
+                        {{ sub.subject_name }} ({{ sub.subject_type }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 140px; flex: 0;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-arrow-down-short-wide"></i> Load Marks
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Step 2: Student Marks Entry Table -->
+{% if current_subject %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">
+                    <i class="fa-solid fa-pen-nib"></i> {{ current_subject.subject_name }}
+                </h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">
+                    Branch: <strong>{{ selected_branch }}</strong> &bull; Semester: <strong>{{ selected_sem }}</strong> &bull; Type: <strong>{{ current_subject.subject_type }}</strong>
+                </span>
+            </div>
+            <!-- Quick Max Marks Setter -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">Set all Max Marks:</label>
+                <input type="number" id="quickMaxInput" class="form-control" style="width: 80px; padding: 0.3rem 0.5rem;" value="100" min="10">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="applyQuickMax()">Apply</button>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('save_marks') }}">
+            <input type="hidden" name="branch" value="{{ selected_branch }}">
+            <input type="hidden" name="sem" value="{{ selected_sem }}">
+            <input type="hidden" name="subject_id" value="{{ current_subject.id }}">
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Student Name</th>
+                            <th>Sec</th>
+                            <th style="width: 140px;">Marks Obtained</th>
+                            <th style="width: 140px;">Max Marks</th>
+                            <th style="min-width: 130px;">Subject %</th>
+                            <th>Performance Band</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if student_records %}
+                            {% for rec in student_records %}
+                                <tr class="marks-calc-row">
+                                    <td><code>{{ rec.roll_number }}</code></td>
+                                    <td>
+                                        <strong>{{ rec.name }}</strong>
+                                        <input type="hidden" name="student_ids" value="{{ rec.student_id }}">
+                                    </td>
+                                    <td>{{ rec.section }}</td>
+                                    <td>
+                                        <input type="number" step="0.5" name="marks_obtained_{{ rec.student_id }}" class="form-control marks-obtained-input" value="{{ rec.marks_obtained|default(0) }}" min="0" max="100" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.5" name="max_marks_{{ rec.student_id }}" class="form-control marks-max-input" value="{{ rec.maximum_marks|default(100) }}" min="1" max="100" required>
+                                    </td>
+                                    <td>
+                                        <span class="marks-pct-display" style="font-size: 1.05rem; font-weight: 700; color: var(--primary-navy);">
+                                            {{ rec.percentage }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if rec.percentage >= 75 %}
+                                            <span class="badge badge-green"><i class="fa-solid fa-star"></i> Distinction (&ge;75%)</span>
+                                        {% elif rec.percentage >= 50 %}
+                                            <span class="badge badge-branch"><i class="fa-solid fa-check"></i> Pass (&ge;50%)</span>
+                                        {% elif rec.percentage >= 40 %}
+                                            <span class="badge badge-yellow"><i class="fa-solid fa-triangle-exclamation"></i> Borderline (40-49%)</span>
+                                        {% else %}
+                                            <span class="badge badge-red"><i class="fa-solid fa-circle-xmark"></i> Critical (&lt;40%)</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    No students registered under Branch <strong>{{ selected_branch }}</strong> (Semester {{ selected_sem }}).
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if student_records %}
+                <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-floppy-disk"></i> Save &amp; Recalculate Performance Metrics
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+{% endif %}
+
+<script>
+function applyQuickMax() {
+    const val = document.getElementById('quickMaxInput').value;
+    if (!val || val <= 0) return;
+    const inputs = document.querySelectorAll('.marks-max-input');
+    inputs.forEach(input => {
+        input.value = val;
+        input.dispatchEvent(new Event('input'));
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Student Management - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-user-graduate"></i> Student Management</h1>
+        <p class="page-subtitle">Manage first-year students, login accounts, and academic profiles</p>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="openModal('addStudentModal')">
+        <i class="fa-solid fa-user-plus"></i> Add New Student
+    </button>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="filter-bar">
+    <div class="filter-group">
+        <div style="position: relative;">
+            <input type="text" id="studentSearch" class="form-control search-input" placeholder="Search by name or roll number...">
+        </div>
+        <select id="filterBranch" class="form-select" style="width: auto;">
+            <option value="">All Branches</option>
+            <option value="AI">AI</option>
+            <option value="AIDS">AIDS</option>
+            <option value="AIML">AIML</option>
+            <option value="DS">DS</option>
+            <option value="CYBER">CYBER</option>
+        </select>
+        <select id="filterSemester" class="form-select" style="width: auto;">
+            <option value="">All Semesters</option>
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+        </select>
+        <select id="filterStatus" class="form-select" style="width: auto;">
+            <option value="">All Statuses</option>
+            <option value="On Track">On Track</option>
+            <option value="Monitor">Monitor</option>
+            <option value="Needs Attention">Needs Attention</option>
+        </select>
+    </div>
+    <div>
+        <span class="badge badge-branch" id="filteredCount">{{ students|length }} students shown</span>
+    </div>
+</div>
+
+<!-- Students Directory Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table" id="studentsTable">
+            <thead>
+                <tr>
+                    <th>Roll Number</th>
+                    <th>Student Name</th>
+                    <th>Email</th>
+                    <th>Branch</th>
+                    <th>Sem &amp; Sec</th>
+                    <th>Avg Attendance</th>
+                    <th>Avg Marks</th>
+                    <th>Academic Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if students %}
+                    {% for s in students %}
+                        <tr data-name="{{ s.name }}" data-roll="{{ s.roll_number }}" data-branch="{{ s.branch }}" data-sem="{{ s.semester }}" data-status="{{ s.status }}">
+                            <td><code>{{ s.roll_number }}</code></td>
+                            <td><strong>{{ s.name }}</strong></td>
+                            <td>{{ s.email }}</td>
+                            <td><span class="badge badge-branch">{{ s.branch }}</span></td>
+                            <td>Sem {{ s.semester }} &bull; Sec {{ s.section }}</td>
+                            <td>
+                                <div class="progress-bar-container">
+                                    <div class="progress-track">
+                                        <div class="progress-fill {% if s.avg_attendance >= 75 %}progress-green{% elif s.avg_attendance >= 70 %}progress-yellow{% else %}progress-red{% endif %}" style="width: {{ s.avg_attendance }}%;"></div>
+                                    </div>
+                                    <span class="progress-text" style="color: {% if s.avg_attendance >= 75 %}#15803d{% elif s.avg_attendance >= 70 %}#b45309{% else %}#b91c1c{% endif %};">
+                                        {{ s.avg_attendance }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ s.avg_marks }}%</strong>
+                            </td>
+                            <td>
+                                {% if s.status == 'On Track' %}
+                                    <span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> On Track</span>
+                                {% elif s.status == 'Monitor' %}
+                                    <span class="badge badge-yellow"><i class="fa-solid fa-triangle-exclamation"></i> Monitor</span>
+                                {% else %}
+                                    <span class="badge badge-red"><i class="fa-solid fa-circle-xmark"></i> Needs Attention</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; white-space: nowrap;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="viewStudentDetails('{{ s.id }}', '{{ s.name }}', '{{ s.roll_number }}', '{{ s.email }}', '{{ s.branch }}', '{{ s.semester }}', '{{ s.section }}', '{{ s.avg_attendance }}', '{{ s.avg_marks }}', '{{ s.status }}', '{{ s.message }}')" title="View Academic Profile">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="editStudent('{{ s.id }}', '{{ s.name }}', '{{ s.roll_number }}', '{{ s.email }}', '{{ s.branch }}', '{{ s.semester }}', '{{ s.section }}')" title="Edit Student">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <form method="POST" action="{{ url_for('delete_student', student_id=s.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete student {{ s.name }} ({{ s.roll_number }})? This will also remove their attendance and marks records.');">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete Student">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No student records found in database. Click "Add New Student" above to create one.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal 1: Add New Student -->
+<div class="modal" id="addStudentModal">
+    <div class="modal-dialog">
+        <form method="POST" action="{{ url_for('add_student') }}">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
+                <button type="button" class="modal-close" onclick="closeModal('addStudentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="add_name">Student Full Name *</label>
+                        <input type="text" id="add_name" name="name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add_roll">Roll Number *</label>
+                        <input type="text" id="add_roll" name="roll_number" class="form-control" placeholder="e.g. 23KIETAI025" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="add_email">Institutional Email *</label>
+                        <input type="email" id="add_email" name="email" class="form-control" placeholder="e.g. 23ai025@kiet.edu" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add_password">Initial Password *</label>
+                        <input type="password" id="add_password" name="password" class="form-control" placeholder="Default student password" required minlength="6" value="Student@123">
+                        <span class="form-text">Student can log in using this credential.</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="add_branch">Branch *</label>
+                        <select id="add_branch" name="branch" class="form-select" required>
+                            <option value="AI">AI — Artificial Intelligence</option>
+                            <option value="AIDS">AIDS — AI &amp; Data Science</option>
+                            <option value="AIML">AIML — AI &amp; Machine Learning</option>
+                            <option value="DS">DS — Data Science</option>
+                            <option value="CYBER">CYBER — Cyber Security</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add_sem">Semester *</label>
+                        <select id="add_sem" name="semester" class="form-select" required>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add_sec">Section *</label>
+                        <select id="add_sec" name="section" class="form-select" required>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Student Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Student Details -->
+<div class="modal" id="editStudentModal">
+    <div class="modal-dialog">
+        <form method="POST" id="editStudentForm" action="">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fa-solid fa-pen-to-square"></i> Edit Student Record</h3>
+                <button type="button" class="modal-close" onclick="closeModal('editStudentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="edit_name">Student Full Name *</label>
+                        <input type="text" id="edit_name" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit_roll">Roll Number *</label>
+                        <input type="text" id="edit_roll" name="roll_number" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="edit_email">Institutional Email *</label>
+                    <input type="email" id="edit_email" name="email" class="form-control" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="edit_branch">Branch *</label>
+                        <select id="edit_branch" name="branch" class="form-select" required>
+                            <option value="AI">AI — Artificial Intelligence</option>
+                            <option value="AIDS">AIDS — AI &amp; Data Science</option>
+                            <option value="AIML">AIML — AI &amp; Machine Learning</option>
+                            <option value="DS">DS — Data Science</option>
+                            <option value="CYBER">CYBER — Cyber Security</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit_sem">Semester *</label>
+                        <select id="edit_sem" name="semester" class="form-select" required>
+                            <option value="1">Semester 1</option>
+                            <option value="2">Semester 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="edit_sec">Section *</label>
+                        <select id="edit_sec" name="section" class="form-select" required>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Update Student</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 3: View Student Profile Details -->
+<div class="modal" id="viewStudentModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fa-solid fa-id-card"></i> Student Academic Snapshot</h3>
+            <button type="button" class="modal-close" onclick="closeModal('viewStudentModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align: center; margin-bottom: 1.25rem;">
+                <div style="width: 60px; height: 60px; background: #e0e7ff; color: #4338ca; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.7rem; margin-bottom: 0.5rem;">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h3 id="view_name" style="color: var(--primary-navy);"></h3>
+                <p id="view_roll" style="font-family: monospace; font-size: 0.95rem; color: var(--text-muted);"></p>
+            </div>
+
+            <div class="stats-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 1rem;">
+                <div class="stat-card" style="padding: 0.75rem;">
+                    <div class="stat-info">
+                        <span class="stat-label">Avg Attendance</span>
+                        <span class="stat-value" id="view_att" style="font-size: 1.3rem;"></span>
+                    </div>
+                </div>
+                <div class="stat-card" style="padding: 0.75rem;">
+                    <div class="stat-info">
+                        <span class="stat-label">Avg Marks</span>
+                        <span class="stat-value" id="view_marks" style="font-size: 1.3rem;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1rem; font-size: 0.88rem;">
+                <div style="margin-bottom: 0.35rem;"><strong>Email:</strong> <span id="view_email"></span></div>
+                <div style="margin-bottom: 0.35rem;"><strong>Branch:</strong> <span id="view_branch" class="badge badge-branch"></span></div>
+                <div><strong>Class:</strong> <span id="view_class"></span></div>
+            </div>
+
+            <div id="view_rec_banner" class="recommendation-banner" style="margin-bottom: 0;">
+                <div class="rec-icon"><i id="view_rec_icon" class="fa-solid fa-circle-info"></i></div>
+                <div class="rec-content">
+                    <h4 id="view_rec_status" style="margin-bottom: 0.2rem; font-weight: 700;"></h4>
+                    <p id="view_rec_msg" style="font-size: 0.85rem; margin: 0;"></p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('viewStudentModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function editStudent(id, name, roll, email, branch, sem, sec) {
+    document.getElementById('editStudentForm').action = "/students/edit/" + id;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_roll').value = roll;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('edit_branch').value = branch;
+    document.getElementById('edit_sem').value = sem;
+    document.getElementById('edit_sec').value = sec;
+    openModal('editStudentModal');
+}
+
+function viewStudentDetails(id, name, roll, email, branch, sem, sec, att, marks, status, msg) {
+    document.getElementById('view_name').innerText = name;
+    document.getElementById('view_roll').innerText = roll;
+    document.getElementById('view_email').innerText = email;
+    document.getElementById('view_branch').innerText = branch;
+    document.getElementById('view_class').innerText = 'Semester ' + sem + ' &bull; Section ' + sec;
+    document.getElementById('view_att').innerText = att + '%';
+    document.getElementById('view_marks').innerText = marks + '%';
+
+    const banner = document.getElementById('view_rec_banner');
+    const icon = document.getElementById('view_rec_icon');
+    const statusEl = document.getElementById('view_rec_status');
+    const msgEl = document.getElementById('view_rec_msg');
+
+    statusEl.innerText = status;
+    msgEl.innerText = msg;
+
+    banner.className = 'recommendation-banner ';
+    if (status === 'On Track') {
+        banner.classList.add('rec-on-track');
+        icon.className = 'fa-solid fa-circle-check';
+    } else if (status === 'Monitor') {
+        banner.classList.add('rec-monitor');
+        icon.className = 'fa-solid fa-triangle-exclamation';
+    } else {
+        banner.classList.add('rec-needs-attention');
+        icon.className = 'fa-solid fa-circle-xmark';
+    }
+
+    openModal('viewStudentModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<!-- Student Profile Card Header -->
+<div class="card" style="border-left: 5px solid var(--primary-blue);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #eff6ff; color: var(--primary-blue); display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                <i class="fa-solid fa-user-graduate"></i>
+            </div>
+            <div>
+                <h1 style="font-size: 1.45rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 0.2rem;">
+                    {{ student.name }}
+                </h1>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; font-size: 0.88rem; color: var(--text-muted);">
+                    <code>{{ student.roll_number }}</code> &bull;
+                    <span class="badge badge-branch">{{ student.branch }}</span> &bull;
+                    <span>Semester {{ student.semester }}</span> &bull;
+                    <span>Section {{ student.section }}</span> &bull;
+                    <span>{{ student.email }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            {% if recommendation.status == 'On Track' %}
+                <span class="badge badge-green" style="font-size: 0.95rem; padding: 0.45rem 1rem;">
+                    <i class="fa-solid fa-circle-check"></i> Status: On Track
+                </span>
+            {% elif recommendation.status == 'Monitor' %}
+                <span class="badge badge-yellow" style="font-size: 0.95rem; padding: 0.45rem 1rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Status: Monitor
+                </span>
+            {% else %}
+                <span class="badge badge-red" style="font-size: 0.95rem; padding: 0.45rem 1rem;">
+                    <i class="fa-solid fa-circle-xmark"></i> Status: Needs Attention
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Personalised Recommendation Banner -->
+<div class="recommendation-banner {% if recommendation.status == 'On Track' %}rec-on-track{% elif recommendation.status == 'Monitor' %}rec-monitor{% else %}rec-needs-attention{% endif %}">
+    <div class="rec-icon">
+        {% if recommendation.status == 'On Track' %}
+            <i class="fa-solid fa-circle-check"></i>
+        {% elif recommendation.status == 'Monitor' %}
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        {% else %}
+            <i class="fa-solid fa-circle-exclamation"></i>
+        {% endif %}
+    </div>
+    <div class="rec-content">
+        <h3>Personalised Academic Recommendation</h3>
+        <p>{{ recommendation.message }}</p>
+    </div>
+</div>
+
+<!-- Overall Metric Cards -->
+<div class="stats-grid">
+    <!-- Overall Attendance -->
+    <div class="stat-card {% if overall_attendance >= 75 %}stat-green{% elif overall_attendance >= 70 %}stat-yellow{% else %}stat-red{% endif %}">
+        <div class="stat-info">
+            <span class="stat-label">Overall Attendance</span>
+            <span class="stat-value">{{ overall_attendance }}%</span>
+            <span class="stat-subtext">
+                {% if overall_attendance >= 75 %}Above 75% Cutoff (Eligible){% elif overall_attendance >= 70 %}Warning (70% - 74%){% else %}Critical Shortage (&lt;70%){% endif %}
+            </span>
+        </div>
+        <i class="fa-solid fa-calendar-days stat-icon"></i>
+    </div>
+
+    <!-- Overall Marks -->
+    <div class="stat-card {% if overall_marks >= 50 %}stat-indigo{% elif overall_marks >= 40 %}stat-yellow{% else %}stat-red{% endif %}">
+        <div class="stat-info">
+            <span class="stat-label">Overall Average Marks</span>
+            <span class="stat-value">{{ overall_marks }}%</span>
+            <span class="stat-subtext">
+                {% if overall_marks >= 50 %}Good Academic Standing{% elif overall_marks >= 40 %}Borderline Passing{% else %}Critical Support Required{% endif %}
+            </span>
+        </div>
+        <i class="fa-solid fa-award stat-icon"></i>
+    </div>
+
+    <!-- Subject Count -->
+    <div class="stat-card stat-purple">
+        <div class="stat-info">
+            <span class="stat-label">Enrolled Subjects</span>
+            <span class="stat-value">{{ attendance_records|length }}</span>
+            <span class="stat-subtext">Theory &amp; Lab Courses</span>
+        </div>
+        <i class="fa-solid fa-book-open stat-icon"></i>
+    </div>
+</div>
+
+<!-- Dynamic Charts Grid -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-column" style="color: #10b981;"></i> Subject-wise Attendance Progress</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="studentAttendanceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-bar" style="color: #2563eb;"></i> Subject-wise Academic Marks (%)</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="studentMarksChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Subject-wise Attendance Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-clipboard-check"></i> Subject-wise Attendance Records</h3>
+        <span class="badge badge-branch">Attendance Threshold: 75%</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Subject Name</th>
+                    <th>Type</th>
+                    <th>Total Classes</th>
+                    <th>Attended</th>
+                    <th>Attendance %</th>
+                    <th>Eligibility Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for att in attendance_records %}
+                    <tr>
+                        <td><strong>{{ att.subject_name }}</strong></td>
+                        <td><span class="badge badge-branch">{{ att.subject_type }}</span></td>
+                        <td>{{ att.total_classes }}</td>
+                        <td>{{ att.attended_classes }}</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-track">
+                                    <div class="progress-fill {% if att.attendance_percentage >= 75 %}progress-green{% elif att.attendance_percentage >= 70 %}progress-yellow{% else %}progress-red{% endif %}" style="width: {{ att.attendance_percentage }}%;"></div>
+                                </div>
+                                <span class="progress-text" style="color: {% if att.attendance_percentage >= 75 %}#15803d{% elif att.attendance_percentage >= 70 %}#b45309{% else %}#b91c1c{% endif %}; font-weight: 700;">
+                                    {{ att.attendance_percentage }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if att.attendance_percentage >= 75 %}
+                                <span class="badge badge-green"><i class="fa-solid fa-check"></i> Eligible</span>
+                            {% elif att.attendance_percentage >= 70 %}
+                                <span class="badge badge-yellow"><i class="fa-solid fa-triangle-exclamation"></i> Warning</span>
+                            {% else %}
+                                <span class="badge badge-red"><i class="fa-solid fa-xmark"></i> Shortage</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Subject-wise Marks Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-pen-to-square"></i> Subject-wise Marks Breakdown</h3>
+        <span class="badge badge-branch">Maximum Score: 100</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Subject Name</th>
+                    <th>Type</th>
+                    <th>Marks Obtained</th>
+                    <th>Maximum Marks</th>
+                    <th>Percentage %</th>
+                    <th>Performance Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mk in marks_records %}
+                    <tr>
+                        <td><strong>{{ mk.subject_name }}</strong></td>
+                        <td><span class="badge badge-branch">{{ mk.subject_type }}</span></td>
+                        <td><strong>{{ mk.marks_obtained }}</strong></td>
+                        <td>{{ mk.maximum_marks }}</td>
+                        <td>
+                            <strong>{{ mk.percentage }}%</strong>
+                        </td>
+                        <td>
+                            {% if mk.percentage >= 75 %}
+                                <span class="badge badge-green">Distinction (&ge;75%)</span>
+                            {% elif mk.percentage >= 50 %}
+                                <span class="badge badge-branch">Pass (&ge;50%)</span>
+                            {% elif mk.percentage >= 40 %}
+                                <span class="badge badge-yellow">Borderline (40-49%)</span>
+                            {% else %}
+                                <span class="badge badge-red">Critical (&lt;40%)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    window.STUDENT_DATA = {{ student_chart_data | tojson }};
+</script>
+{% endblock %}

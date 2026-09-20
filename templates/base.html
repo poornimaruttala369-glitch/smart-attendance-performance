@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KIET Smart Attendance and Performance Analyser{% endblock %}</title>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Academic Header -->
+    <header class="kiet-header">
+        <div class="header-container">
+            <div class="brand-section">
+                <div class="brand-logo-badge">
+                    <i class="fa-solid fa-graduation-cap"></i> KIET
+                </div>
+                <div class="brand-titles">
+                    <span class="college-name">KIET Institutions</span>
+                    <span class="app-title">KIET Smart Attendance and Performance Analyser</span>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation Toggle -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <!-- Navigation Links -->
+            <nav class="main-nav">
+                <ul class="nav-links" id="navLinks">
+                    {% if session.get('user_id') %}
+                        {% if session.get('role') in ['admin', 'teacher'] %}
+                            <li class="nav-item {% if active_page == 'home' %}active{% endif %}">
+                                <a href="{{ url_for('index') }}"><i class="fa-solid fa-house"></i> Home</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+                                <a href="{{ url_for('admin_dashboard') }}"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'students' %}active{% endif %}">
+                                <a href="{{ url_for('students_view') }}"><i class="fa-solid fa-user-graduate"></i> Students</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'attendance' %}active{% endif %}">
+                                <a href="{{ url_for('attendance_view') }}"><i class="fa-solid fa-clipboard-user"></i> Attendance</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'marks' %}active{% endif %}">
+                                <a href="{{ url_for('marks_view') }}"><i class="fa-solid fa-award"></i> Marks</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'branch_comparison' %}active{% endif %}">
+                                <a href="{{ url_for('branch_comparison_view') }}"><i class="fa-solid fa-network-wired"></i> Branch Comparison</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'profile' %}active{% endif %}">
+                                <a href="{{ url_for('profile_view') }}"><i class="fa-solid fa-id-badge"></i> Profile</a>
+                            </li>
+                        {% elif session.get('role') == 'student' %}
+                            <li class="nav-item {% if active_page == 'student_dashboard' %}active{% endif %}">
+                                <a href="{{ url_for('student_dashboard') }}"><i class="fa-solid fa-chart-pie"></i> My Dashboard</a>
+                            </li>
+                            <li class="nav-item {% if active_page == 'profile' %}active{% endif %}">
+                                <a href="{{ url_for('profile_view') }}"><i class="fa-solid fa-id-badge"></i> My Profile</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <span class="user-badge">
+                                <i class="fa-solid fa-circle-user"></i> {{ session.get('user_name', 'User') }}
+                                <span class="user-role-tag {% if session.get('role') == 'student' %}student{% endif %}">
+                                    {{ session.get('role', 'user') }}
+                                </span>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('logout') }}" style="color: #fca5a5;"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item {% if active_page == 'home' %}active{% endif %}">
+                            <a href="{{ url_for('index') }}"><i class="fa-solid fa-house"></i> Home</a>
+                        </li>
+                        <li class="nav-item {% if active_page == 'login' %}active{% endif %}">
+                            <a href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                        </li>
+                        <li class="nav-item {% if active_page == 'signup' %}active{% endif %}">
+                            <a href="{{ url_for('signup') }}"><i class="fa-solid fa-user-plus"></i> Teacher / Admin Sign Up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="content-wrapper">
+        <!-- Flash messages -->
+        <div class="alert-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>
+                                {% if category == 'success' %}
+                                    <i class="fa-solid fa-circle-check"></i>
+                                {% elif category in ['danger', 'error'] %}
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                {% elif category == 'warning' %}
+                                    <i class="fa-solid fa-bell"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-circle-info"></i>
+                                {% endif %}
+                                {{ message }}
+                            </span>
+                            <button type="button" class="alert-close" onclick="this.parentElement.remove();">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Standard Academic Footer -->
+    <footer class="kiet-footer">
+        <p><strong>KIET Institutions</strong> &bull; Department of Computer Science &amp; Allied Branches (AI &amp; Data Science)</p>
+        <p class="footer-highlight">Built with Python • Flask • HTML • CSS • JavaScript • SQLite</p>
+    </footer>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

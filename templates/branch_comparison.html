@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Branch Comparison - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-network-wired"></i> Branch Comparison &amp; Institutional Analytics</h1>
+        <p class="page-subtitle">Cross-branch benchmarking across KIET Emerging Tech Branches: AI, AIDS, AIML, DS, and CYBER</p>
+    </div>
+</div>
+
+<!-- Automatic Insights Cards -->
+<div class="insights-grid">
+    <!-- Best Branch Marks -->
+    <div class="insight-card">
+        <div class="insight-icon-wrapper insight-green">
+            <i class="fa-solid fa-medal"></i>
+        </div>
+        <div class="insight-content">
+            <h4>Highest Academic Score</h4>
+            <div class="insight-val">{{ insights.best_marks_branch.branch|default('N/A') }}</div>
+            <div class="insight-desc">Leading with <strong>{{ insights.best_marks_branch.avg_marks|default(0) }}%</strong> average marks</div>
+        </div>
+    </div>
+
+    <!-- Best Branch Attendance -->
+    <div class="insight-card">
+        <div class="insight-icon-wrapper insight-blue">
+            <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div class="insight-content">
+            <h4>Highest Class Attendance</h4>
+            <div class="insight-val">{{ insights.best_att_branch.branch|default('N/A') }}</div>
+            <div class="insight-desc">Leading with <strong>{{ insights.best_att_branch.avg_att|default(0) }}%</strong> average presence</div>
+        </div>
+    </div>
+
+    <!-- Branch Needing Improvement -->
+    <div class="insight-card">
+        <div class="insight-icon-wrapper insight-yellow">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+        </div>
+        <div class="insight-content">
+            <h4>Focus Needed</h4>
+            <div class="insight-val">{{ insights.needs_improvement_branch.branch|default('N/A') }}</div>
+            <div class="insight-desc">Lowest combined index (<strong>{{ insights.needs_improvement_branch.combined_score|default(0) }}%</strong>)</div>
+        </div>
+    </div>
+
+    <!-- Total At-Risk Students -->
+    <div class="insight-card">
+        <div class="insight-icon-wrapper insight-red">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="insight-content">
+            <h4>At-Risk Students</h4>
+            <div class="insight-val">{{ insights.total_at_risk }} Students</div>
+            <div class="insight-desc">Flagged across all 5 branches for support</div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Comparison Data Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-table-list"></i> First-Year Branch Performance Benchmark</h3>
+        <span class="badge badge-branch">5 KIET Branches</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Branch Name</th>
+                    <th>Students Enrolled</th>
+                    <th>Average Attendance %</th>
+                    <th>Average Marks %</th>
+                    <th>On Track</th>
+                    <th>Monitor</th>
+                    <th>Needs Attention</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in branch_table %}
+                    <tr>
+                        <td>
+                            <strong>{{ row.branch }}</strong>
+                            <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">{{ row.name }}</span>
+                        </td>
+                        <td><strong>{{ row.count }}</strong></td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-track">
+                                    <div class="progress-fill {% if row.avg_att >= 75 %}progress-green{% elif row.avg_att >= 70 %}progress-yellow{% else %}progress-red{% endif %}" style="width: {{ row.avg_att }}%;"></div>
+                                </div>
+                                <span class="progress-text" style="color: {% if row.avg_att >= 75 %}#15803d{% elif row.avg_att >= 70 %}#b45309{% else %}#b91c1c{% endif %}; font-weight: 700;">
+                                    {{ row.avg_att }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ row.avg_marks }}%</strong>
+                        </td>
+                        <td>
+                            <span class="badge badge-green">{{ row.on_track }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-yellow">{{ row.monitor }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-red">{{ row.needs_attention }}</span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 6 Interactive Chart.js Graphs Grid -->
+<div class="charts-grid">
+    <!-- Chart 1: Total Students per Branch (Bar Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-users" style="color: #2563eb;"></i> 1. Student Enrollment by Branch</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartBranchStudents"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Average Attendance % per Branch (Bar Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-calendar-check" style="color: #10b981;"></i> 2. Average Attendance Percentage by Branch</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartBranchAttendance"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Average Marks % per Branch (Bar Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-line" style="color: #8b5cf6;"></i> 3. Average Academic Marks by Branch</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartBranchMarks"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 4: Student Status Distribution (Doughnut Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> 4. Student Status Distribution</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartStatusDistribution"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 5: Relationship Between Attendance & Marks (Scatter Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-diagram-project" style="color: #0284c7;"></i> 5. Correlation: Attendance vs. Marks</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartAttendanceVsMarks"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 6: Subject-wise Average Marks (Horizontal Bar Chart) -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title"><i class="fa-solid fa-book-bookmark" style="color: #4f46e5;"></i> 6. First-Year Subject-wise Average Marks</h3>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="chartSubjectMarks"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Pass backend data safely to Chart.js controller
+    window.BRANCH_DATA = {{ chart_data | tojson }};
+</script>
+{% endblock %}

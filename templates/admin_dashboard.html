@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Admin / Teacher Dashboard - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-gauge-high"></i> Academic Analytics Dashboard
+        </h1>
+        <p class="page-subtitle">
+            Welcome back, <strong>{{ session.get('user_name') }}</strong> &bull; KIET Institutions First-Year Performance Overview
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('students_view') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-user-plus"></i> Add Student
+        </a>
+        <a href="{{ url_for('attendance_view') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-clipboard-user"></i> Record Attendance
+        </a>
+        <a href="{{ url_for('marks_view') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-pen-to-square"></i> Record Marks
+        </a>
+        <a href="{{ url_for('branch_comparison_view') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-network-wired"></i> Branch Comparison
+        </a>
+    </div>
+</div>
+
+<!-- Primary Summary Cards Grid -->
+<div class="stats-grid">
+    <!-- Total Students -->
+    <div class="stat-card stat-indigo">
+        <div class="stat-info">
+            <span class="stat-label">Total Students</span>
+            <span class="stat-value">{{ stats.total_students }}</span>
+            <span class="stat-subtext">Across 5 KIET Branches</span>
+        </div>
+        <i class="fa-solid fa-user-graduate stat-icon"></i>
+    </div>
+
+    <!-- Overall Average Attendance -->
+    <div class="stat-card {% if stats.overall_avg_attendance >= 75 %}stat-green{% elif stats.overall_avg_attendance >= 70 %}stat-yellow{% else %}stat-red{% endif %}">
+        <div class="stat-info">
+            <span class="stat-label">Overall Avg Attendance</span>
+            <span class="stat-value">{{ stats.overall_avg_attendance }}%</span>
+            <span class="stat-subtext">
+                {% if stats.overall_avg_attendance >= 75 %}Compliant (≥75%){% else %}Sub-optimal (&lt;75%){% endif %}
+            </span>
+        </div>
+        <i class="fa-solid fa-clipboard-check stat-icon"></i>
+    </div>
+
+    <!-- Overall Average Marks -->
+    <div class="stat-card stat-purple">
+        <div class="stat-info">
+            <span class="stat-label">Overall Avg Marks</span>
+            <span class="stat-value">{{ stats.overall_avg_marks }}%</span>
+            <span class="stat-subtext">Cumulative Subject Mean</span>
+        </div>
+        <i class="fa-solid fa-chart-line stat-icon"></i>
+    </div>
+
+    <!-- Students Needing Attention -->
+    <div class="stat-card stat-red">
+        <div class="stat-info">
+            <span class="stat-label">Needing Attention</span>
+            <span class="stat-value">{{ stats.needs_attention_count }}</span>
+            <span class="stat-subtext">Critical Academic Intervention</span>
+        </div>
+        <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+    </div>
+
+    <!-- Best Performing Branch -->
+    <div class="stat-card stat-green">
+        <div class="stat-info">
+            <span class="stat-label">Best Performing Branch</span>
+            <span class="stat-value" style="font-size: 1.35rem;">{{ stats.best_marks_branch.branch|default('N/A') }}</span>
+            <span class="stat-subtext">{{ stats.best_marks_branch.avg_marks|default(0) }}% Marks Average</span>
+        </div>
+        <i class="fa-solid fa-trophy stat-icon"></i>
+    </div>
+
+    <!-- Branch with Highest Attendance -->
+    <div class="stat-card stat-green">
+        <div class="stat-info">
+            <span class="stat-label">Highest Attendance</span>
+            <span class="stat-value" style="font-size: 1.35rem;">{{ stats.highest_att_branch.branch|default('N/A') }}</span>
+            <span class="stat-subtext">{{ stats.highest_att_branch.avg_att|default(0) }}% Attendance</span>
+        </div>
+        <i class="fa-solid fa-star stat-icon"></i>
+    </div>
+</div>
+
+<!-- Number of Students in Each Branch Breakdown -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-sitemap"></i> Branch Enrollment Distribution
+        </h3>
+        <a href="{{ url_for('branch_comparison_view') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-chart-column"></i> Detailed Comparison Reports &rarr;
+        </a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        {% for b in branch_distribution %}
+            <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.9rem; text-align: center;">
+                <span class="badge badge-branch" style="margin-bottom: 0.4rem; font-size: 0.85rem;">{{ b.branch }}</span>
+                <div style="font-size: 1.4rem; font-weight: 700; color: var(--primary-navy);">{{ b.count }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ b.name }}</div>
+                <div style="margin-top: 0.5rem; font-size: 0.78rem; display: flex; justify-content: space-around; color: var(--text-muted);">
+                    <span>Att: <strong>{{ b.avg_att }}%</strong></span>
+                    <span>Marks: <strong>{{ b.avg_marks }}%</strong></span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Students Needing Attention Table -->
+<div class="card">
+    <div class="card-header" style="border-left: 4px solid var(--status-red-bar); padding-left: 0.75rem;">
+        <div>
+            <h3 class="card-title" style="color: #991b1b;">
+                <i class="fa-solid fa-circle-exclamation"></i> Students Needing Immediate Attention
+            </h3>
+            <span style="font-size: 0.82rem; color: var(--text-muted);">
+                Students with attendance below 70% or average marks below 40%
+            </span>
+        </div>
+        <span class="badge badge-red">{{ at_risk_students|length }} Flagged</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Roll Number</th>
+                    <th>Branch</th>
+                    <th>Semester</th>
+                    <th>Attendance %</th>
+                    <th>Average Marks</th>
+                    <th>Status</th>
+                    <th>Automated Recommendation</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if at_risk_students %}
+                    {% for s in at_risk_students %}
+                        <tr>
+                            <td><strong>{{ s.name }}</strong></td>
+                            <td><code>{{ s.roll_number }}</code></td>
+                            <td><span class="badge badge-branch">{{ s.branch }}</span></td>
+                            <td>Sem {{ s.semester }}</td>
+                            <td>
+                                <div class="progress-bar-container">
+                                    <div class="progress-track">
+                                        <div class="progress-fill progress-red" style="width: {{ s.avg_attendance }}%;"></div>
+                                    </div>
+                                    <span class="progress-text" style="color: #b91c1c;">{{ s.avg_attendance }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ s.avg_marks }}%</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-red">
+                                    <i class="fa-solid fa-circle-xmark"></i> {{ s.status }}
+                                </span>
+                            </td>
+                            <td style="max-width: 280px; font-size: 0.82rem; color: #991b1b;">
+                                {{ s.message }}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('attendance_view', branch=s.branch, sem=s.semester) }}" class="btn btn-secondary btn-sm" title="View/Update Attendance">
+                                    <i class="fa-solid fa-clipboard-user"></i>
+                                </a>
+                                <a href="{{ url_for('marks_view', branch=s.branch, sem=s.semester) }}" class="btn btn-secondary btn-sm" title="View/Update Marks">
+                                    <i class="fa-solid fa-award"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            <i class="fa-solid fa-circle-check" style="font-size: 2rem; color: #16a34a; margin-bottom: 0.5rem; display: block;"></i>
+                            Excellent! Currently no students fall into the critical "Needs Attention" bracket.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

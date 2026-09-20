@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Login - KIET Smart Attendance and Performance Analyser{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 2rem auto;">
+    <div class="card" style="padding: 2.25rem;">
+        <div style="text-align: center; margin-bottom: 1.75rem;">
+            <div style="width: 56px; height: 56px; background: #eff6ff; color: var(--primary-blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 style="font-size: 1.4rem; color: var(--primary-navy); font-weight: 700;">Academic Portal Login</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Sign in with your institutional credentials</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label class="form-label" for="email"><i class="fa-solid fa-envelope"></i> Institutional Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="name@kiet.edu" required autofocus value="{{ email|default('') }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password"><i class="fa-solid fa-key"></i> Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-size: 0.95rem; margin-top: 0.5rem;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+            </button>
+        </form>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            New faculty member? <a href="{{ url_for('signup') }}" style="font-weight: 600;">Register as Teacher/Admin</a>
+            <p style="margin-top: 0.4rem; font-size: 0.78rem;">Students: Credentials are provided by your department faculty / administrator.</p>
+        </div>
+    </div>
+
+    <!-- Quick Demo Testing Autofill Card -->
+    <div class="card" style="background: #f8fafc; border-style: dashed;">
+        <h4 style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-flask"></i> Quick Demo Logins for Evaluation
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary btn-sm" style="justify-content: space-between; text-align: left;" onclick="fillCredentials('admin@kiet.edu', 'Admin@123')">
+                <span><i class="fa-solid fa-shield-halved" style="color: #4f46e5;"></i> <strong>HOD / Admin</strong> (admin@kiet.edu)</span>
+                <span class="badge badge-branch">Auto-fill</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" style="justify-content: space-between; text-align: left;" onclick="fillCredentials('teacher.ai@kiet.edu', 'Teacher@123')">
+                <span><i class="fa-solid fa-chalkboard-user" style="color: #2563eb;"></i> <strong>AI Faculty</strong> (teacher.ai@kiet.edu)</span>
+                <span class="badge badge-branch">Auto-fill</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" style="justify-content: space-between; text-align: left;" onclick="fillCredentials('23ai001@kiet.edu', 'Student@123')">
+                <span><i class="fa-solid fa-user-graduate" style="color: #10b981;"></i> <strong>Student (On Track)</strong> (23ai001@kiet.edu)</span>
+                <span class="badge badge-green">Auto-fill</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" style="justify-content: space-between; text-align: left;" onclick="fillCredentials('23ai004@kiet.edu', 'Student@123')">
+                <span><i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i> <strong>Student (Needs Attention)</strong> (23ai004@kiet.edu)</span>
+                <span class="badge badge-red">Auto-fill</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillCredentials(email, password) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = password;
+}
+</script>
+{% endblock %}

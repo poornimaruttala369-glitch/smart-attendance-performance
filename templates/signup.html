@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty & Admin Registration - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto;">
+    <div class="card" style="padding: 2.25rem;">
+        <div style="text-align: center; margin-bottom: 1.75rem;">
+            <div style="width: 56px; height: 56px; background: #eff6ff; color: var(--primary-blue); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.75rem;">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <h2 style="font-size: 1.4rem; color: var(--primary-navy); font-weight: 700;">Teacher &amp; Admin Sign Up</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Create a faculty account for KIET Institutions</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('signup') }}">
+            <div class="form-group">
+                <label class="form-label" for="name"><i class="fa-solid fa-user"></i> Full Name</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Prof. / Dr. Firstname Lastname" required value="{{ form_data.name|default('') }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="email"><i class="fa-solid fa-envelope"></i> Institutional Email</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="faculty@kiet.edu" required value="{{ form_data.email|default('') }}">
+                <span class="form-text">Must be a valid email address.</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="role"><i class="fa-solid fa-id-card-clip"></i> Role</label>
+                    <select id="role" name="role" class="form-select" required onchange="toggleAdminKeyField()">
+                        <option value="teacher" {% if form_data.role == 'teacher' %}selected{% endif %}>Teacher / Faculty</option>
+                        <option value="admin" {% if form_data.role == 'admin' %}selected{% endif %}>Administrator / HOD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="branch"><i class="fa-solid fa-code-branch"></i> Department / Branch</label>
+                    <select id="branch" name="branch" class="form-select" required>
+                        <option value="AI" {% if form_data.branch == 'AI' %}selected{% endif %}>AI — Artificial Intelligence</option>
+                        <option value="AIDS" {% if form_data.branch == 'AIDS' %}selected{% endif %}>AIDS — AI &amp; Data Science</option>
+                        <option value="AIML" {% if form_data.branch == 'AIML' %}selected{% endif %}>AIML — AI &amp; Machine Learning</option>
+                        <option value="DS" {% if form_data.branch == 'DS' %}selected{% endif %}>DS — Data Science</option>
+                        <option value="CYBER" {% if form_data.branch == 'CYBER' %}selected{% endif %}>CYBER — Cyber Security</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="semester"><i class="fa-solid fa-layer-group"></i> Primary Semester Assigned</label>
+                <select id="semester" name="semester" class="form-select" required>
+                    <option value="1" {% if form_data.semester == '1' %}selected{% endif %}>Semester 1 (1st Year B.Tech)</option>
+                    <option value="2" {% if form_data.semester == '2' %}selected{% endif %}>Semester 2 (1st Year B.Tech)</option>
+                </select>
+            </div>
+
+            <!-- Admin Passcode field (only visible when Admin role is selected to prevent unauthorized admin creation) -->
+            <div class="form-group" id="adminKeyGroup" style="display: none;">
+                <label class="form-label" for="admin_key"><i class="fa-solid fa-key"></i> Administrator Passcode</label>
+                <input type="password" id="admin_key" name="admin_key" class="form-control" placeholder="Enter KIET institution admin setup key (default: KIET@Admin2024)">
+                <span class="form-text">Required for elevated HOD/Administrator privileges.</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="password"><i class="fa-solid fa-lock"></i> Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required minlength="6">
+                    <span class="form-text">Minimum 6 characters</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password"><i class="fa-solid fa-lock-open"></i> Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" required minlength="6">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; font-size: 0.95rem; margin-top: 0.75rem;">
+                <i class="fa-solid fa-user-plus"></i> Complete Registration
+            </button>
+        </form>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            Already registered? <a href="{{ url_for('login') }}" style="font-weight: 600;">Log In to Portal</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAdminKeyField() {
+    const roleSelect = document.getElementById('role');
+    const keyGroup = document.getElementById('adminKeyGroup');
+    if (roleSelect.value === 'admin') {
+        keyGroup.style.display = 'block';
+    } else {
+        keyGroup.style.display = 'none';
+    }
+}
+document.addEventListener('DOMContentLoaded', toggleAdminKeyField);
+</script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-clipboard-user"></i> Attendance Management</h1>
+        <p class="page-subtitle">Track and record subject-wise class attendance for first-year students</p>
+    </div>
+</div>
+
+<!-- Attendance Color Legend -->
+<div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem;">
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: var(--status-green-bar); display: inline-block;"></span>
+        <strong>Green:</strong> 75% &amp; above (Compliant)
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem;">
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: var(--status-yellow-bar); display: inline-block;"></span>
+        <strong>Yellow:</strong> 70% to 74% (Borderline / Monitor)
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem;">
+        <span style="width: 12px; height: 12px; border-radius: 3px; background: var(--status-red-bar); display: inline-block;"></span>
+        <strong>Red:</strong> Below 70% (At Risk / Needs Attention)
+    </div>
+</div>
+
+<!-- Step 1: Branch → Semester → Subject Selection Filter -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-filter"></i> Select Class &amp; Subject</h3>
+    </div>
+    <form method="GET" action="{{ url_for('attendance_view') }}" class="form-row" style="align-items: flex-end;">
+        <div class="form-group" style="min-width: 160px;">
+            <label class="form-label" for="filter_branch">1. Select Branch *</label>
+            <select id="filter_branch" name="branch" class="form-select" required>
+                {% for b in branches %}
+                    <option value="{{ b.code }}" {% if selected_branch == b.code %}selected{% endif %}>{{ b.code }} — {{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 140px;">
+            <label class="form-label" for="filter_sem">2. Semester *</label>
+            <select id="filter_sem" name="sem" class="form-select" required onchange="this.form.submit()">
+                <option value="1" {% if selected_sem == 1 %}selected{% endif %}>Semester 1</option>
+                <option value="2" {% if selected_sem == 2 %}selected{% endif %}>Semester 2</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 280px; flex: 2;">
+            <label class="form-label" for="filter_subject">3. First-Year Subject *</label>
+            <select id="filter_subject" name="subject_id" class="form-select" required>
+                {% for sub in subjects %}
+                    <option value="{{ sub.id }}" {% if selected_subject_id == sub.id %}selected{% endif %}>
+                        {{ sub.subject_name }} ({{ sub.subject_type }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="min-width: 140px; flex: 0;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-arrow-down-short-wide"></i> Load Students
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Step 2: Student Attendance Entry Table -->
+{% if current_subject %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">
+                    <i class="fa-solid fa-book-bookmark"></i> {{ current_subject.subject_name }}
+                </h3>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">
+                    Branch: <strong>{{ selected_branch }}</strong> &bull; Semester: <strong>{{ selected_sem }}</strong> &bull; Type: <strong>{{ current_subject.subject_type }}</strong>
+                </span>
+            </div>
+            <!-- Quick Total Classes Setter -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">Set all Total Classes:</label>
+                <input type="number" id="quickTotalInput" class="form-control" style="width: 80px; padding: 0.3rem 0.5rem;" placeholder="e.g. 40" min="1">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="applyQuickTotal()">Apply</button>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('save_attendance') }}">
+            <input type="hidden" name="branch" value="{{ selected_branch }}">
+            <input type="hidden" name="sem" value="{{ selected_sem }}">
+            <input type="hidden" name="subject_id" value="{{ current_subject.id }}">
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Roll Number</th>
+                            <th>Student Name</th>
+                            <th>Sec</th>
+                            <th style="width: 130px;">Total Classes</th>
+                            <th style="width: 130px;">Attended</th>
+                            <th style="min-width: 180px;">Attendance %</th>
+                            <th>Current Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if student_records %}
+                            {% for rec in student_records %}
+                                <tr class="attendance-calc-row">
+                                    <td><code>{{ rec.roll_number }}</code></td>
+                                    <td>
+                                        <strong>{{ rec.name }}</strong>
+                                        <input type="hidden" name="student_ids" value="{{ rec.student_id }}">
+                                    </td>
+                                    <td>{{ rec.section }}</td>
+                                    <td>
+                                        <input type="number" name="total_classes_{{ rec.student_id }}" class="form-control total-classes-input" value="{{ rec.total_classes|default(40) }}" min="1" max="100" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="attended_classes_{{ rec.student_id }}" class="form-control attended-classes-input" value="{{ rec.attended_classes|default(0) }}" min="0" max="100" required>
+                                    </td>
+                                    <td>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-track">
+                                                <div class="calc-bar-fill progress-fill {% if rec.attendance_percentage >= 75 %}progress-green{% elif rec.attendance_percentage >= 70 %}progress-yellow{% else %}progress-red{% endif %}" style="width: {{ rec.attendance_percentage }}%;"></div>
+                                            </div>
+                                            <span class="calc-pct-display progress-text" style="font-weight: 700;">
+                                                {{ rec.attendance_percentage }}%
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rec.attendance_percentage >= 75 %}
+                                            <span class="badge badge-green"><i class="fa-solid fa-circle-check"></i> Eligible</span>
+                                        {% elif rec.attendance_percentage >= 70 %}
+                                            <span class="badge badge-yellow"><i class="fa-solid fa-triangle-exclamation"></i> Warning</span>
+                                        {% else %}
+                                            <span class="badge badge-red"><i class="fa-solid fa-circle-xmark"></i> Shortage</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                    No students registered under Branch <strong>{{ selected_branch }}</strong> (Semester {{ selected_sem }}).
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if student_records %}
+                <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa-solid fa-floppy-disk"></i> Save &amp; Update Attendance Records
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+{% endif %}
+
+<script>
+function applyQuickTotal() {
+    const val = document.getElementById('quickTotalInput').value;
+    if (!val || val <= 0) return;
+    const inputs = document.querySelectorAll('.total-classes-input');
+    inputs.forEach(input => {
+        input.value = val;
+        // Trigger input event to re-calculate percentage
+        input.dispatchEvent(new Event('input'));
+    });
+}
+</script>
+{% endblock %}

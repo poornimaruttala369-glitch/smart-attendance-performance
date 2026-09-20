@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}KIET Smart Attendance and Performance Analyser - Home{% endblock %}
+
+{% block content %}
+<!-- Academic Hero Section -->
+<section class="hero-section">
+    <div class="hero-badge">
+        <i class="fa-solid fa-microchip"></i> 2nd-Year B.Tech AI &amp; Data Science Academic Initiative
+    </div>
+    <h1 class="hero-title">
+        KIET Smart Attendance and Performance Analyser
+    </h1>
+    <p class="hero-subtitle">
+        An intelligent academic monitoring system for KIET Institutions engineered to track first-year students’ attendance, benchmark academic performance, identify students requiring support, and evaluate multi-branch analytics across AI, AIDS, AIML, DS, and CYBER.
+    </p>
+
+    <div class="hero-buttons">
+        {% if session.get('user_id') %}
+            {% if session.get('role') == 'student' %}
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-warning btn-lg">
+                    <i class="fa-solid fa-chart-pie"></i> Go to My Student Dashboard
+                </a>
+            {% else %}
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-warning btn-lg">
+                    <i class="fa-solid fa-gauge-high"></i> Go to Admin Dashboard
+                </a>
+            {% endif %}
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-warning btn-lg">
+                <i class="fa-solid fa-right-to-bracket"></i> Login to Portal
+            </a>
+            <a href="{{ url_for('signup') }}" class="btn btn-secondary btn-lg" style="background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">
+                <i class="fa-solid fa-user-plus"></i> Teacher / Admin Sign Up
+            </a>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Quick Stats Preview Banner -->
+<div class="stats-grid">
+    <div class="stat-card stat-indigo">
+        <div class="stat-info">
+            <span class="stat-label">Participating Branches</span>
+            <span class="stat-value">5</span>
+            <span class="stat-subtext">AI, AIDS, AIML, DS, CYBER</span>
+        </div>
+        <i class="fa-solid fa-network-wired stat-icon"></i>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-info">
+            <span class="stat-label">Minimum Attendance Cutoff</span>
+            <span class="stat-value">75%</span>
+            <span class="stat-subtext">University Mandatory Threshold</span>
+        </div>
+        <i class="fa-solid fa-calendar-check stat-icon"></i>
+    </div>
+    <div class="stat-card stat-yellow">
+        <div class="stat-info">
+            <span class="stat-label">Early Intervention</span>
+            <span class="stat-value">Automated</span>
+            <span class="stat-subtext">Instant Support Recommendations</span>
+        </div>
+        <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+    </div>
+    <div class="stat-card stat-purple">
+        <div class="stat-info">
+            <span class="stat-label">Analytics Engine</span>
+            <span class="stat-value">Chart.js</span>
+            <span class="stat-subtext">6 Dynamic Visual Metrics</span>
+        </div>
+        <i class="fa-solid fa-chart-column stat-icon"></i>
+    </div>
+</div>
+
+<!-- Three Core Pillars Feature Cards -->
+<section class="feature-cards-grid">
+    <!-- Card 1: Attendance Tracking -->
+    <div class="feature-card">
+        <div class="feature-icon-circle">
+            <i class="fa-solid fa-clipboard-user"></i>
+        </div>
+        <h3>Intelligent Attendance Tracking</h3>
+        <p>
+            Seamlessly record and calculate attendance percentages across subjects and laboratory workshops. Color-coded thresholds instantly classify attendance into <strong>Green (≥75%)</strong>, <strong>Yellow (70-74%)</strong>, and <strong>Red (&lt;70%)</strong> for prompt intervention.
+        </p>
+    </div>
+
+    <!-- Card 2: Performance Analysis -->
+    <div class="feature-card">
+        <div class="feature-icon-circle" style="color: #10b981; background: #ecfdf5;">
+            <i class="fa-solid fa-brain"></i>
+        </div>
+        <h3>Automated Performance Analysis</h3>
+        <p>
+            Multi-tier evaluation rules correlate subject marks with attendance compliance. Automatically flags students needing attention or regular monitoring, while delivering personalized recommendations for consistent academic improvement.
+        </p>
+    </div>
+
+    <!-- Card 3: Multi-Branch Comparison -->
+    <div class="feature-card">
+        <div class="feature-icon-circle" style="color: #8b5cf6; background: #f5f3ff;">
+            <i class="fa-solid fa-chart-pie"></i>
+        </div>
+        <h3>Cross-Branch Benchmarking</h3>
+        <p>
+            Gain institutional oversight across <strong>AI</strong>, <strong>AIDS</strong>, <strong>AIML</strong>, <strong>DS</strong>, and <strong>CYBER</strong>. Visualize student density, average scores, at-risk distributions, and subject-level difficulty curves using modern Chart.js data visualizations.
+        </p>
+    </div>
+</section>
+
+<!-- Curriculum Overview Card -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fa-solid fa-book-open"></i> First-Year Common Engineering Curriculum</h2>
+        <span class="badge badge-branch">KIET Autonomous / R23 Compatible</span>
+    </div>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        The system handles the standardized first-year academic framework for all emerging branches, including Theory lectures, Laboratory experiments, and Skill-Oriented workshops.
+    </p>
+    <div class="form-row">
+        <div style="flex: 1; min-width: 280px;">
+            <h4 style="color: var(--primary-navy); margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-1" style="color: var(--primary-blue);"></i> Semester 1 Focus</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-main); line-height: 1.8;">
+                <li>Communicative English &amp; Language Lab</li>
+                <li>Linear Algebra and Calculus</li>
+                <li>Engineering Chemistry &amp; Lab</li>
+                <li>Programming for Problem Solving using C &amp; Lab</li>
+                <li>Basic Electrical and Electronics Engineering</li>
+                <li>Engineering Graphics &amp; Workshop</li>
+            </ul>
+        </div>
+        <div style="flex: 1; min-width: 280px;">
+            <h4 style="color: var(--primary-navy); margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-2" style="color: #0284c7;"></i> Semester 2 Focus</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-main); line-height: 1.8;">
+                <li>Differential Equations and Vector Calculus</li>
+                <li>Applied Physics &amp; Physics Lab</li>
+                <li>Data Structures &amp; Data Structures Lab</li>
+                <li>Digital Logic Design</li>
+                <li>Basic Civil and Mechanical Engineering</li>
+                <li>Skill-Oriented Course / Workshop</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}User Profile - KIET Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-id-badge"></i> User Profile &amp; Account Settings</h1>
+        <p class="page-subtitle">Manage your credentials and view institutional registration details</p>
+    </div>
+</div>
+
+<div class="form-row">
+    <!-- User Information Card -->
+    <div class="card" style="flex: 1; min-width: 320px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-user"></i> Registration Information</h3>
+            <span class="badge {% if user.role == 'student' %}badge-green{% else %}badge-branch{% endif %}">
+                {{ user.role|upper }}
+            </span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: #eff6ff; color: var(--primary-blue); display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                <i class="fa-solid fa-circle-user"></i>
+            </div>
+            <div>
+                <h3 style="color: var(--primary-navy); margin-bottom: 0.15rem;">{{ user.name }}</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">{{ user.email }}</p>
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; font-size: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                <span style="color: var(--text-muted);">Institution:</span>
+                <strong>KIET Institutions</strong>
+            </div>
+            {% if student_details %}
+                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted);">Roll Number:</span>
+                    <code>{{ student_details.roll_number }}</code>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted);">Branch:</span>
+                    <span class="badge badge-branch">{{ student_details.branch }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted);">Semester &amp; Section:</span>
+                    <strong>Semester {{ student_details.semester }} (Section {{ student_details.section }})</strong>
+                </div>
+            {% else %}
+                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted);">Department:</span>
+                    <span class="badge badge-branch">{{ user.branch|default('General') }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted);">Assigned Semester:</span>
+                    <strong>Semester {{ user.semester|default(1) }}</strong>
+                </div>
+            {% endif %}
+            <div style="display: flex; justify-content: space-between; padding: 0.4rem 0;">
+                <span style="color: var(--text-muted);">Account Created:</span>
+                <span>{{ user.created_at }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Card -->
+    <div class="card" style="flex: 1; min-width: 320px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-shield-halved"></i> Update Account Password</h3>
+        </div>
+
+        <form method="POST" action="{{ url_for('change_password') }}">
+            <div class="form-group">
+                <label class="form-label" for="current_password">Current Password *</label>
+                <input type="password" id="current_password" name="current_password" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="new_password">New Password *</label>
+                <input type="password" id="new_password" name="new_password" class="form-control" required minlength="6">
+                <span class="form-text">Minimum 6 characters</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="confirm_new_password">Confirm New Password *</label>
+                <input type="password" id="confirm_new_password" name="confirm_new_password" class="form-control" required minlength="6">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                <i class="fa-solid fa-key"></i> Change Password
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
